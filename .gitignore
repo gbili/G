@@ -3,6 +3,10 @@ LICENSE.txt
 README.txt
 demos/
 extras/documentation
+<<<<<<< HEAD
 .settings
 .buildpath
 .project
+=======
+
+>>>>>>> 1e1b4276adb589e7ed8186f228ddd4c32ee7f96a

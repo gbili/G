@@ -1,0 +1,7 @@
+there are many file organisaton possibilities, it may be interesting
+to use the mac os x approach of self contained applications.
+Each component contains all the components that it needs to run in
+its directory tree.
+This approach is good because it simplifies the automatic instanciation
+of components.
+I.e 

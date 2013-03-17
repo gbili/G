@@ -1,0 +1,39 @@
+This project is meant to get the names of as many movies as possible and retrieve as many sources as possible for each one.
+There are several challenges:
+	- Getting the movies names.
+	- Get the sources for each movie name
+	
+	These two challenges can be solved in many ways and i see two main vectors.
+		1. Reuse work done by sites that also give links to sources
+			a. Use anchors and with regex determine what is a movie name
+			b. then follow link until sources
+				- check if sources are valid comparing them to well known patterns
+			c. save to db
+		2.Retrieve the movie names from well known sites such as imdb.com, wikipedia.org etc. and use google.com to get sources
+			a. in wiki/imbd : Use anchors and regex to determine what is a movie name
+			b. store the movie names in database
+			c. google the list of well known Db/download sites such as megaupload.com and use
+				-use zend's google api to query
+				-use regex to retrieve the url's host from result query
+			d. google the list of sources for a movie name stored in some host
+				- use google api and query -> site:<host.tld> "<movie name><file type>"
+					- try every well known types : avi, mp4, dvx...
+			e. store each source under that movie in database
+			
+		Problems:
+			1. Taxonomy/Dubbing :
+				Each movie has an original version, implying that it my have derived versions, such as the dubbed version.
+				It would be nice to have sources for every language, the movie titles may be different from version to version.
+				Nonetheless we want to keep track of a certain level of parent children hierarchy. To make the user experience
+				more consistent. There after problems arise:
+					- How to determine which one is the original version.
+						? use wiki and the studio name
+						? use imdb
+						? use human input
+					- How to store in db
+						? there is a need of a parent id for each movie if we want some hierarchy
+							? use a temporary id that would be the same for each
+							? when adding use its own id as parent id
+								-> update when found a parent
+						-> when the parent is not determined directly there will be some redundancy in the database for metadata such as description
+				

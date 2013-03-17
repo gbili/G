@@ -1,0 +1,11 @@
+; Miner Engine configurations
+[production]
+database.rdbms					= "mysql"
+database.adapter				= "PDO_MYSQL"
+database.connection.host		= "localhost"
+database.connection.username	= "gui"
+database.connection.password	= "mysql"
+database.connection.dbname		= "miner"
+
+[staging : production]
+databsae.adapter				= "PDO_MYSQL"

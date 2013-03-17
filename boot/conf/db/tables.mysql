@@ -1,0 +1,561 @@
+-- MySQL dump 10.11
+--
+-- Host: localhost    Database: biodynamite
+-- ------------------------------------------------------
+-- Server version	5.0.77
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+-- DROP DATABASE IF EXISTS `miner`;
+-- CREATE DATABASE `miner`;
+-- USE `miner`;
+-- GRANT ALL ON miner.* TO 'gui'@'localhost';
+
+--
+-- Table structure for table `Country`
+--
+
+-- ------------------------------------------------------------ Tables --------------------------------------------------------------
+-- ----- table naming description ------
+-- 
+-- 	Car 			: an entity (Car) no external relations
+--	CarBrand		: entity (brand), needs taxonomy from car to avoid conflicts with other type of brands
+--	Car_Age 		: attribute (Age) that cannot live without (Car) so it doesn't merit a table for itself
+--			-unary attribution (one Age per car id)
+--	Car_Ages 		: same as Car_Age
+--			-one to many attribution (many Age per car id) her makes no sense but the 's' means that...
+--	Car_r_Weel 	: table that describes a relation between two strong entities, each have their own table
+--			-one to one relation
+--	Car_r_Weels 	: same as Car_r_Weel
+--			-one to many relation (many weels per car)
+--	note : the columns in the table that will be reused in other tables as columns must be prefixed with a word that gives them some taxonomy
+-- ----- signatures -------
+-- -Video (videoId, title, dateReleased, slug, langISO) //All videos (original version, dubbed version) are stored here and have their own id there should be one video id per version
+-- -VideoToParent (parentId, videoId) //the each video will be related to its original version with a parentId which is the videoId of the oV
+-- -VideoSynopsis (videoId, synopsis) //then for each video language there should be a synopsis, there is no sense to have sinopsys in other languages than the versions available (if the user wants to downlad, a certain version, he understands that language)
+-- -VideoToCountry (videoId, countryId) //__videoId__ : here are only parent videoId
+-- -VideoToParticipants (vPId, videoId, movieIndustryEntityId, roleId) //__videoId__ : here are only parent videoId (avoid data duplication as for each version they are the same), entities involved in movie and their role
+-- //if we want to get all the videoId's where MovieIndustryEntity.name "Jonny Depp" was involved and his roles:
+--  SELECT vp.videoId, r.name
+--  FROM VideoToParticipant AS vp 
+--		INNER JOIN MIE AS mie 
+--			ON (vp.mIEId = mie.mIEId)
+--		INNER JOIN MIERole AS r
+--			ON (vp.roleId = r.roleId) 
+--	WHERE mie.name = "Jonny Depp" 
+-- -VideoToGenre(videoId, genreId) // __videoId__ : only parent ids
+-- -MIE (mIEId, name, countryId, slug) //[MovieIndustryEntity]all entities existing in the industry, also see role
+-- -MIERole (roleId, name, slug) // possible involvement roles in a movie: actor, producer, director...
+-- -VideoSources (sourceId, videoId, sourceId, sourceTypeId, sourceQualityId, path) //path : /id?=this_is_my_movie.avi
+-- -SourceHost (hostId, name, slug, schemeAndAuthority) // megaupload, rapidshare ...
+
+
+-- -MIEDescription (mIEDId, mIEId, langISO, description)
+-- VideoRate (videoId, rate, dateRated)
+-- VideoRating (videoId, rate, numRates, dateComputed)
+-- ----------------------- STATIC CONTENT ---------------------- this is the content that is not supposed to change with the application
+-- Country (countryId, name, slug);
+-- CountryMatcher (countryId, regex, priority);
+-- CountryToLang (countryId, langISO);
+
+-- Genre(genreId, name) //terror, comedy ...
+
+-- SourceType (sourceTypeId, name, slug) //streaming, download, torrent
+-- SourceQuality (sourceQualityId, slug) //DVDRip, DVDSCR, CAM, R5, TS, TC
+-- SourceQualityDescription (sQDId, sourceQualityId, langISO, description) // http://ezinearticles.com/?What-Does-DVDRip,-DVDSCR,-CAM,-R5,-TS-and-TC-Mean&id=1706483
+
+
+-- ----------------------------------------------------------------------------------------------------------------------------------
+-- -----------------------------------     Video     ----------------------------------------
+-- //All videos (original version, dubbed version) are stored here and have their own id there should be one video id per version
+
+DROP TABLE IF EXISTS `Video`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Video` (
+  `videoId` int(10) unsigned NOT NULL auto_increment,
+  `title` varchar(255) NOT NULL default '',
+  `slug` varchar(255) NOT NULL default '',
+  `langISO` varchar(3) NOT NULL default '',
+  PRIMARY KEY  (`videoId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Video`
+--
+
+LOCK TABLES `Video` WRITE;
+/*!40000 ALTER TABLE `Video` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Video` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  Parent_r_Videos  ----------------------------------------
+-- //the each video will be related to its original version with a parentId which is the videoId of the oV
+
+DROP TABLE IF EXISTS `Parent_r_Videos`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Parent_r_Videos` (
+  `videoId` int(10) unsigned NOT NULL default '0',
+  `parentId` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`videoId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Parent_r_Videos`
+--
+
+LOCK TABLES `Parent_r_Videos` WRITE;
+/*!40000 ALTER TABLE `Parent_r_Videos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Parent_r_Videos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  Video_Synopsis  ----------------------------------------
+-- //then for each video language there should be a synopsis, there is no sense to have sinopsys 
+-- in other languages than the versions available (if the user wants to downlad, a certain version, 
+-- he understands that language)
+
+-- there is one video id per version (lang), so there will be one synopsis per video id,
+-- that is why videoId can be primary
+-- however it is not added to Video table, because we want to keep it narrow to fasten
+-- queries that do not need synopsis
+--
+-- Table structure for table `VideoToSynopsis`
+--
+
+DROP TABLE IF EXISTS `Video_Synopsis`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Video_Synopsis` (
+  `videoId` int(10) unsigned NOT NULL auto_increment,
+  `synopsys` text NOT NULL,
+  PRIMARY KEY  (`videoId`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Video_Synopsis`
+--
+
+LOCK TABLES `Video_Synopsis` WRITE;
+/*!40000 ALTER TABLE `Video_Synopsis` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Video_Synopsis` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  Video_r_Countries  ----------------------------------------
+-- //__videoId__ : here are only parent videoId
+-- there may be many countries per video id thus there may be repeated video id rows,
+-- that is why primary key needs to be in two cols
+-- note: the videoId here should only real versions, but it seems unfeasable because
+-- what happens when there is only the dubbed version?
+
+DROP TABLE IF EXISTS `Video_r_Countries`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Video_r_Countries` (
+  `videoId` int(10) unsigned NOT NULL default '0',
+  `countryId` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`videoId`, `countryId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Video_r_Countries`
+--
+
+LOCK TABLES `Video_r_Countries` WRITE;
+/*!40000 ALTER TABLE `Video_r_Countries` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Video_r_Countries` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  Video_r_Participants  ----------------------------------------
+-- there may be many participants per video
+-- //__videoId__ : here are only parent videoId (avoid data duplication as for each version they are the same), entities involved in movie and their role
+-- //if we want to get all the videoId's where MovieIndustryEntity.name "Jonny Depp" was involved and his roles:
+--  SELECT vp.videoId, r.name
+--  FROM Video_r_Participants AS vp 
+--		INNER JOIN MIE AS mie 
+--			ON (vp.mIEId = mie.mIEId)
+--		INNER JOIN MIERole AS r
+--			ON (vp.roleId = r.roleId) 
+--	WHERE mie.name = "Jonny Depp" 
+
+DROP TABLE IF EXISTS `Video_r_Participants`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Video_r_Participants` (
+  `videoId` int(10) unsigned NOT NULL default '0',
+  `movieIndustryEntityId` int(10) unsigned NOT NULL default '0',
+  `roleId` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`videoId`, `movieIndustryEntityId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Video_r_Participants`
+--
+
+LOCK TABLES `Video_r_Participants` WRITE;
+/*!40000 ALTER TABLE `Video_r_Participants` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Video_r_Participants` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+-- -----------------------------------  Video_r_Genre  ----------------------------------------
+-- why isn't this table integrated to Video, it should as there is a one to one relation, but as the
+-- table video has parents and childs, and the genere is the same for parents and childs, this data
+-- would be redundant for the childs. so what we do is have this table that stores only video parents
+-- so we have a "n" genre to video rows instead of "n parents" * "p childs" genre to video rows
+
+DROP TABLE IF EXISTS `Video_r_Genre`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Video_r_Genre` (
+  `videoId` int(10) unsigned NOT NULL default '0',
+  `genreId` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`videoId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Video_r_Genre`
+--
+
+LOCK TABLES `Video_r_Genre` WRITE;
+/*!40000 ALTER TABLE `Video_r_Genre` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Video_r_Genre` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+-- -----------------------------------  Genre  ----------------------------------------
+-- Genre(genreId, name) //terror, comedy ...
+
+DROP TABLE IF EXISTS `Genre`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Genre` (
+  `genreId` int(10) unsigned NOT NULL auto_increment,
+  `name` varchar(255) NOT NULL default '',
+  `slug` varchar(255) NOT NULL default '',
+  PRIMARY KEY  (`genreId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Genre`
+--
+
+LOCK TABLES `Genre` WRITE;
+/*!40000 ALTER TABLE `Genre` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Genre` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  Video_Date  ----------------------------------------
+-- why isn't this table integrated to Video, it should as there is a one to one relation, but as the
+-- table video has parents and childs, and the date is the same for parents and childs, this data
+-- would be redundant for the childs. so what we do is have this table that stores only video parents
+-- so we have a "n" date to video rows instead of "n parents" * "p childs" date to video rows
+
+DROP TABLE IF EXISTS `Video_Date`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Video_Date` (
+  `videoId` int(10) unsigned NOT NULL default '0',
+  `dateReleased` date NOT NULL default '00-00-0000',
+  PRIMARY KEY  (`videoId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Video_Date`
+--
+
+LOCK TABLES `VideoDate` WRITE;
+/*!40000 ALTER TABLE `Video_Date` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Video_Date` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------     MIE     ----------------------------------------
+DROP TABLE IF EXISTS `MIE`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `MIE` (
+  `mIEId` int(10) unsigned NOT NULL auto_increment,
+  `name` varchar(255) NOT NULL default '',
+  `slug` varchar(255) NOT NULL default 'N/A',
+  `countryId` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`mIEId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `MIE`
+--
+
+LOCK TABLES `MIE` WRITE;
+/*!40000 ALTER TABLE `MIE` DISABLE KEYS */;
+/*!40000 ALTER TABLE `MIE` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+-- -----------------------------------     MIERole     ----------------------------------------
+--  // possible involvement roles in a movie: actor, producer, director...
+DROP TABLE IF EXISTS `MIERole`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `MIERole` (
+  `roleId` int(10) unsigned NOT NULL auto_increment,
+  `name` varchar(255) NOT NULL default '',
+  `slug` varchar(255) NOT NULL default '',
+  PRIMARY KEY  (`roleId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `MIERole`
+--
+
+LOCK TABLES `MIERole` WRITE;
+/*!40000 ALTER TABLE `MIERole` DISABLE KEYS */;
+/*!40000 ALTER TABLE `MIERole` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  MIE_Description  ----------------------------------------
+-- there are many descriptions per movie industry entity one for each lang, maybe descriptions should be links
+-- 
+-- Table structure for table `MIE_Description`
+--
+
+DROP TABLE IF EXISTS `MIE_Description`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `MIE_Description` (
+  `MIEId` int(10) unsigned NOT NULL auto_increment,
+  `description` text NOT NULL,
+  `langISOId` varchar(255) NOT NULL default '',
+  `url` varchar(255),
+  PRIMARY KEY  (`MIEId`, `langISOId`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `MIE_Description`
+--
+
+LOCK TABLES `MIE_Description` WRITE;
+/*!40000 ALTER TABLE `MIE_Description` DISABLE KEYS */;
+/*!40000 ALTER TABLE `MIE_Description` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  Video_Sources  ----------------------------------------
+-- there may be many sources for a video version, here video id is all videos parents and childs
+-- vSId, videoId, sourceId, sourceTypeId, sourceQualityId, path
+
+DROP TABLE IF EXISTS `Video_Sources`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Video_Sources` (
+  `sourceId` int(10) unsigned NOT NULL auto_increment,
+  `videoId` int(10) unsigned NOT NULL default '0',
+  `sourceHostId` int(10) unsigned NOT NULL default '0',
+  `sourceTypeId` int(10) unsigned NOT NULL default '0',
+  `sourceQualityId` int(10) unsigned NOT NULL default '0',
+  `path` varchar(255) NOT NULL default '',
+  `slug` varchar(255) NOT NULL default '',
+  PRIMARY KEY  (`sourceId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Video_Sources`
+--
+
+LOCK TABLES `Video_Sources` WRITE;
+/*!40000 ALTER TABLE `Video_Sources` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Video_Sources` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  SourceType  ----------------------------------------
+-- the source type may be : download, streaming
+
+DROP TABLE IF EXISTS `SourceType`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `SourceType` (
+  `sourceTypeId` int(10) unsigned NOT NULL auto_increment,
+  `name` varchar(255) NOT NULL default '',
+  `registrationRequired` int(10) NOT NULL default 0,
+  `costFree` int(10) NOT NULL default 1,
+  PRIMARY KEY  (`sourceTypeId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `SourceType`
+--
+
+LOCK TABLES `SourceType` WRITE;
+/*!40000 ALTER TABLE `SourceType` DISABLE KEYS */;
+/*!40000 ALTER TABLE `SourceType` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  SourceQuality  ----------------------------------------
+-- the source type may be : download, streaming
+
+DROP TABLE IF EXISTS `SourceQuality`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `SourceQuality` (
+  `sourceQualityId` int(10) unsigned NOT NULL auto_increment,
+  `name` varchar(255) NOT NULL default '',
+  PRIMARY KEY  (`sourceQualityId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `SourceQuality`
+--
+
+LOCK TABLES `SourceQuality` WRITE;
+/*!40000 ALTER TABLE `SourceQuality` DISABLE KEYS */;
+/*!40000 ALTER TABLE `SourceQuality` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  SourceHost  ----------------------------------------
+-- Host (hostId, name, slug, schemeAndAuthority) // megaupload, rapidshare ...
+
+DROP TABLE IF EXISTS `SourceHost`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `SourceHost` (
+  `sourceHostId` int(10) unsigned NOT NULL auto_increment,
+  `name` varchar(255) NOT NULL default '',
+  `slug` varchar(255) NOT NULL default '',
+  `schemeAndAuthority` varchar(255) NOT NULL default '',
+  PRIMARY KEY  (`sourceHostId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `SourceHost`
+--
+
+LOCK TABLES `SourceHost` WRITE;
+/*!40000 ALTER TABLE `SourceHost` DISABLE KEYS */;
+/*!40000 ALTER TABLE `SourceHost` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+-- -----------------------------------  Country  ----------------------------------------
+-- -- Country (countryId, name, slug);
+
+DROP TABLE IF EXISTS `Country`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Country` (
+  `countryId` int(10) unsigned NOT NULL auto_increment,
+  `name` varchar(255) NOT NULL default '',
+  `slug` varchar(255) NOT NULL default '',
+  PRIMARY KEY  (`countryId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Country`
+--
+
+LOCK TABLES `Country` WRITE;
+/*!40000 ALTER TABLE `Country` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Country` ENABLE KEYS */;
+UNLOCK TABLES;
+
+-- -----------------------------------  Country_Matcher  ----------------------------------------
+-- CountryMatcher (countryId, regex, priority);
+
+DROP TABLE IF EXISTS `Country_Matcher`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Country_Matcher` (
+  `priority` int(10) unsigned NOT NULL auto_increment,
+  `countryId` int(10) unsigned NOT NULL default '0',
+  `regex` TEXT NOT NULL,
+  PRIMARY KEY  (`priority`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Country_Matcher`
+--
+
+LOCK TABLES `Country_Matcher` WRITE;
+/*!40000 ALTER TABLE `Country_Matcher` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Country_Matcher` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+-- -----------------------------------  Country_r_LangISOs  ----------------------------------------
+-- CountryToLangs (countryId, langISO);
+
+DROP TABLE IF EXISTS `Country_r_LangISOs`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `Country_r_LangISOs` (
+  `countryId` int(10) unsigned NOT NULL default '0',
+  `langISOId` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`countryId`, `langISOId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `Country_r_LangISOs`
+--
+
+LOCK TABLES `Country_r_LangISOs` WRITE;
+/*!40000 ALTER TABLE `Country_r_LangISOs` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Country_r_LangISOs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+-- -----------------------------------  LangISO  ----------------------------------------
+-- CountryToLangs (countryId, langISO);
+
+DROP TABLE IF EXISTS `LangISO`;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+CREATE TABLE `LangISO` (
+  `langISOId` int(10) unsigned NOT NULL auto_increment,
+  `name` varchar(255) NOT NULL default '',
+  PRIMARY KEY  (`langISOId`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Dumping data for table `LangISO`
+--
+
+LOCK TABLES `LangISO` WRITE;
+/*!40000 ALTER TABLE `LangISO` DISABLE KEYS */;
+/*!40000 ALTER TABLE `LangISO` ENABLE KEYS */;
+UNLOCK TABLES;
+
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+

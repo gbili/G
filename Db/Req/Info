@@ -1,0 +1,61 @@
+Structure : 
+G_Db_Registry
+G_Db_Req
+
+The G_Molecule_Savable class, uses the G_Db_Req to save
+the instances extending it.
+The G_Molecule_Savable class should be extended, by those objects
+that represent an element with an id in the database.
+For those classes, the G_Molecule_Savable makes sure every attribute
+in the extending class gets saved to the databse.
+When G_Molecule_Savable::save() is called, all the attributes that
+are an instance of G_Molecule_Savable get saved too, making their ids
+available to the first class that called G_Molecule_Savable::save().
+This results in a chained call to save().
+
+The class in charge of saving the G_Molecule_Savable's content to the
+Db is G_Db_Req.
+Every class extending the G_Molecule_Savable class should tell it's
+parent which requestor to use when save() is called.
+This can be done explicitely by calling the G_Molecule_Savable::setRequestorClassName($name)
+or it will be guessed implicitely from within the G_Molecule_Savable::save()
+method that calls G_Db_Registry::getInstance($callerClassName) mathod.
+The latter will search inside the registry to see if there is an instance
+of the requestor specified by $callerClassName . <classNameEndPart>.
+So if your class is MyName_John the requestor that the registry will
+try to get or automatically instantiate is MyName_John_<classNameEndPart>.
+<classNameEndPart> by default is '_Db_Requestor'.
+If you use the Zend_Autoloader class naming convention this will 
+try to load the class "MyName_John_Db_Requestor" with the path:
+"./MyName/John/Db/Requestor.php".
+This type of requestor loading convention, allows to give up a lot
+of unnecesary requestor instantiation within the G_Molecule_Savable
+subclass. On the other hand it forces you to have a G_Db_Req
+subclass for every G_Molecule_Savable subclass, or to specify the name
+of the G_Sotrage_Requestor subclass to use for every G_Molecule_Subclass.
+
+There are times when you will not want to use the G_Molecule_Savable
+class, but only a simple G_Db_Req instance because it suits
+your needs. When this case arises, you probably won't want to have twenty
+instances of the G_Db_Req class. 
+To allow you avoid that the G_Db_Req class has a registry that
+can store one instance of itself at a time. This is sort of a lousy singleton
+registry implementation; you cannot specify a key and store an instance 
+per key. But it is also lighter. And fits to most applications.
+There are many times where you don't need to create different requestor
+instances because you don't use more than one database. In that situation
+you can call G_Db_Req::register() method and then retrieve it
+later in the script by calling G_Db_Req::getRegisteredInstance()
+static method.
+The register() method is not static so you must create an instance
+to register it. If you pass no parameter to the constructor, you will
+get the fallbackPrefix'ed adater. That's the type of instance that you
+get when you call getRegisteredInstance() and there is no instance
+in the registry. Otherwise if you need to instantiate a requestor with
+a different adapter, you will need to first set the prefixed adapter
+from the G_Db_Req_Abstract::setPrefixedAdapter($prefix, $adapter)
+static method, and then pass that $prefix to the G_Db_Req::__construct($prefix)
+it will automatically instantiate the requestor with the right
+adapter.
+Don't use the G_Db_Req registry capabilities if some
+adapters cannot be shared, it will cause security issues.

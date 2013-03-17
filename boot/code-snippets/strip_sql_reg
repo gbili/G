@@ -1,0 +1,1 @@
+SELECT vc.slug AS catSlug, vc.value AS catName, i.localUrl AS imageLocalUrl, MAX(v.viewCount) FROM G_Vid_Category AS vc  RIGHT JOIN G_Vid AS v ON (vc.elementId = v.categoryId) RIGHT JOIN G_Vid_Image AS i ON (v.imageId = i.imageId) GROUP BY vc.elementId

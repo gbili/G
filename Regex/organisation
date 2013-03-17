@@ -1,0 +1,8 @@
+the organization of files and directories has to be rethought
+shouldn't each component be contained in its directory
+ex: Date -> Miner/Date/Regex.php
+		 -> Miner/Date/Regex/String.php
+
+instead of current:
+	Miner/Regex/Date.php
+	Miner/Regex/Date/String.php
